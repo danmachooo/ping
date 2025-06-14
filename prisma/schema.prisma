@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model magiclink {
+  id         String   @id @default(uuid())
+  email      String
+  token      String   @unique(map: "MagicLink_token_key")
+  userId     String?  // Now optional
+  used       Boolean  @default(false)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  user       user?    @relation(fields: [userId], references: [id], map: "MagicLink_userId_fkey")
+
+  @@index([userId], map: "MagicLink_userId_fkey")
+}
+
+model match {
+  id                       String       @id @default(uuid())
+  user1Id                  String
+  user2Id                  String
+  date                     DateTime
+  status                   match_status @default(ACTIVE)
+  createdAt                DateTime     @default(now())
+  expiresAt                DateTime
+  user_match_user1IdTouser user         @relation("match_user1IdTouser", fields: [user1Id], references: [id], map: "Match_user1Id_fkey")
+  user_match_user2IdTouser user         @relation("match_user2IdTouser", fields: [user2Id], references: [id], map: "Match_user2Id_fkey")
+  post                     post[]
+  reply                    reply[]
+
+  @@index([user1Id], map: "Match_user1Id_fkey")
+  @@index([user2Id], map: "Match_user2Id_fkey")
+}
+
+model post {
+  id        String   @id @default(uuid())
+  matchId   String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  user      user     @relation(fields: [authorId], references: [id], map: "Post_authorId_fkey")
+  match     match    @relation(fields: [matchId], references: [id], map: "Post_matchId_fkey")
+
+  @@index([authorId], map: "Post_authorId_fkey")
+  @@index([matchId], map: "Post_matchId_fkey")
+}
+
+model reply {
+  id        String   @id @default(uuid())
+  matchId   String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  user      user     @relation(fields: [authorId], references: [id], map: "Reply_authorId_fkey")
+  match     match    @relation(fields: [matchId], references: [id], map: "Reply_matchId_fkey")
+
+  @@index([authorId], map: "Reply_authorId_fkey")
+  @@index([matchId], map: "Reply_matchId_fkey")
+}
+
+model user {
+  id                        String      @id
+  email                     String      @unique(map: "User_email_key")
+  createdAt                 DateTime    @default(now())
+  lastActive                DateTime
+  timezone                  String?
+  mood                      String?
+  isActive                  Boolean     @default(false)
+  magiclink                 magiclink[]
+  match_match_user1IdTouser match[]     @relation("match_user1IdTouser")
+  match_match_user2IdTouser match[]     @relation("match_user2IdTouser")
+  post                      post[]
+  reply                     reply[]
+}
+
+enum match_status {
+  ACTIVE
+  EXPIRED
+}
