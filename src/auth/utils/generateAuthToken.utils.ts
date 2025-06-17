@@ -21,7 +21,8 @@ export const generateAuthToken = (payload: JwtPayload): any => {
   console.log("Log from Auth Token Generation");
   console.log("\nAccess Token: ", accessToken.substring(0, 10));
   console.log("\nRefresh Token: ", refreshToken);
-  console.log("\nJWT SECRET: ", config.jwtSecret + config.jwtRefreshSecret);
+  console.log("\nJWT SECRET: ", config.jwtSecret);
+  console.log("\nJWT REFRESH SECRET: ", config.jwtRefreshSecret);
   console.log("==============================");
 
   return {

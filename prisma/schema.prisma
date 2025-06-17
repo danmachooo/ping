@@ -69,7 +69,7 @@ model reply {
 
 model user {
   id                        String      @id
-  refreshToken              String?      @unique()
+  refreshToken              String?     @db.Text
   email                     String      @unique(map: "User_email_key")
   createdAt                 DateTime    @default(now())
   lastActive                DateTime

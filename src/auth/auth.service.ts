@@ -7,7 +7,8 @@ import { expiresAt } from "./utils/expiresAt.util";
 import { generateAuthToken, JwtPayload } from "./utils/generateAuthToken.utils";
 import { generateId } from "./utils/generateId.util";
 import { generateToken } from "./utils/generateToken.util";
-import jwt, { Jwt } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
+
 export class AuthService {
   constructor(
     private readonly emailService: IEmailService,
@@ -65,14 +66,14 @@ export class AuthService {
 
     const { accessToken, refreshToken } = generateAuthToken(payload);
 
-    await this.userRepo.saveRefreshToken(payload.userId, refreshToken);
+    user = await this.userRepo.saveRefreshToken(payload.userId, refreshToken);
 
     return accessToken;
   }
 
   async refreshAccessToken(token: string): Promise<string> {
     if (!token) throw new BadRequestError("No refresh token provided.");
-
+    console.log("Refresh Token: ", token);
     let payload: JwtPayload;
     try {
       payload = jwt.verify(token, config.jwtRefreshSecret) as JwtPayload;
@@ -82,9 +83,10 @@ export class AuthService {
 
     const { email, userId } = payload;
 
-    const { refreshtoken } = await this.userRepo.findById(userId);
-    if (!refreshtoken || refreshtoken !== token) {
-      throw new ForbiddenError("Invalid refresh token.");
+    const user = await this.userRepo.findById(userId);
+
+    if (!user.refreshToken || user.refreshToken !== token) {
+      throw new ForbiddenError("Invalid refresh token..");
     }
 
     const newAccessToken = await generateAuthToken({ email, userId });
