@@ -2,11 +2,12 @@ import { config } from "../config";
 import { IEmailService } from "../email/interfaces/email-service.interface";
 import { MagicLinkRepository } from "../magicLink/magicLink.repository";
 import { UserRepository } from "../users/user.repository";
+import { BadRequestError, ForbiddenError } from "../utils/error";
 import { expiresAt } from "./utils/expiresAt.util";
-import { generateAuthToken } from "./utils/generateAuthToken.utils";
+import { generateAuthToken, JwtPayload } from "./utils/generateAuthToken.utils";
 import { generateId } from "./utils/generateId.util";
 import { generateToken } from "./utils/generateToken.util";
-
+import jwt, { Jwt } from "jsonwebtoken";
 export class AuthService {
   constructor(
     private readonly emailService: IEmailService,
@@ -50,14 +51,43 @@ export class AuthService {
 
       if (!user) {
         const userId = generateId(magicLink.email);
-        await this.userRepo.createUser(userId, magicLink.email);
-        user = await this.userRepo.findById(userId);
+        user = await this.userRepo.createUser(userId, magicLink.email);
         await this.magicLinkRepo.attachUser(magicLink.id, userId);
       }
     }
 
+    const payload: JwtPayload = {
+      userId: user.id,
+      email: user.email,
+    };
+
     await this.magicLinkRepo.markAsUsed(magicLink.id);
 
-    return generateAuthToken(user.id);
+    const { accessToken, refreshToken } = generateAuthToken(payload);
+
+    await this.userRepo.saveRefreshToken(payload.userId, refreshToken);
+
+    return accessToken;
+  }
+
+  async refreshAccessToken(token: string): Promise<string> {
+    if (!token) throw new BadRequestError("No refresh token provided.");
+
+    let payload: JwtPayload;
+    try {
+      payload = jwt.verify(token, config.jwtRefreshSecret) as JwtPayload;
+    } catch {
+      throw new ForbiddenError("Invalid or expired refresh token.");
+    }
+
+    const { email, userId } = payload;
+
+    const { refreshtoken } = await this.userRepo.findById(userId);
+    if (!refreshtoken || refreshtoken !== token) {
+      throw new ForbiddenError("Invalid refresh token.");
+    }
+
+    const newAccessToken = await generateAuthToken({ email, userId });
+    return newAccessToken;
   }
 }

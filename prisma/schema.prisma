@@ -9,15 +9,15 @@ datasource db {
 }
 
 model magiclink {
-  id         String   @id @default(uuid())
-  email      String
-  token      String   @unique(map: "MagicLink_token_key")
-  userId     String?  // Now optional
-  used       Boolean  @default(false)
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
+  id        String   @id @default(uuid())
+  email     String
+  token     String   @unique(map: "MagicLink_token_key")
+  userId    String? // Now optional
+  used      Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
-  user       user?    @relation(fields: [userId], references: [id], map: "MagicLink_userId_fkey")
+  user user? @relation(fields: [userId], references: [id], map: "MagicLink_userId_fkey")
 
   @@index([userId], map: "MagicLink_userId_fkey")
 }
@@ -69,6 +69,7 @@ model reply {
 
 model user {
   id                        String      @id
+  refreshToken              String?      @unique()
   email                     String      @unique(map: "User_email_key")
   createdAt                 DateTime    @default(now())
   lastActive                DateTime

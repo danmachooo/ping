@@ -5,7 +5,8 @@ dotenv.config();
 export const config = {
   port: process.env.PORT || 3000,
   appBaseUrl: process.env.APP_BASE_URL || "http://localhost:3000",
-  jwtSecret: process.env.JWT_SECRET || "fallback_jwt_secret_change_me", // IMPORTANT: Use a strong secret in production
+  jwtSecret: process.env.JWT_SECRET || "hello", // IMPORTANT: Use a strong secret in production
+  jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || "world", // IMPORTANT: Use a strong secret in production
   email: {
     host: process.env.EMAIL_HOST,
     port: parseInt(process.env.EMAIL_PORT || "587", 10),
@@ -16,6 +17,13 @@ export const config = {
   },
   magicLinkExpiresInMinutes: 15, // How long a magic link is valid
   jwtExpiresInHours: "1h", // How long the JWT token issued after magic link login is valid
+  jwtRefreshExpiresInHours: "7d", // How long the JWT token issued after magic link login is valid
+  cookieOptions: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  },
 };
 
 // Basic validation (add more robust validation in a real app)

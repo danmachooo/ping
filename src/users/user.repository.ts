@@ -52,4 +52,15 @@ export class UserRepository {
       console.error("Error creating user:", error);
     }
   }
+
+  async saveRefreshToken(id: string, token: string) {
+    return await prisma.user.update({
+      data: {
+        refreshToken: token,
+      },
+      where: {
+        id,
+      },
+    });
+  }
 }
